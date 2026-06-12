@@ -1,0 +1,6 @@
+{
+  "name": "CCT-COMTECH Portal",
+  "description": "Club management system with member registration approvals, score tracking, attendance, and task verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
