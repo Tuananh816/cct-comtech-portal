@@ -28,6 +28,10 @@ export const KEYS = {
 
 // LocalStorage helpers with fallback to initial static datasets
 export function getSavedData<T>(key: string, defaultValue: T): T {
+  // If database is not initialized yet in localStorage, initialize it synchronously
+  if (typeof window !== 'undefined' && !localStorage.getItem(KEYS.USERS)) {
+    initializeDatabase();
+  }
   const saved = localStorage.getItem(key);
   if (saved) {
     try {
