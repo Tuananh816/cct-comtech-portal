@@ -28,11 +28,29 @@ export const KEYS = {
 
 // LocalStorage helpers with fallback to initial static datasets
 export function getSavedData<T>(key: string, defaultValue: T): T {
-  // If database is not initialized yet in localStorage, initialize it synchronously
-  if (typeof window !== 'undefined' && !localStorage.getItem(KEYS.USERS)) {
-    initializeDatabase();
+  if (typeof window !== 'undefined') {
+    // Force-reinitialize if USERS key doesn't exist, is invalid, or contains an empty list
+    const usersRaw = localStorage.getItem(KEYS.USERS);
+    let needsHeal = false;
+    if (!usersRaw) {
+      needsHeal = true;
+    } else {
+      try {
+        const parsed = JSON.parse(usersRaw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          needsHeal = true;
+        }
+      } catch {
+        needsHeal = true;
+      }
+    }
+
+    if (needsHeal) {
+      initializeDatabase(true);
+    }
   }
-  const saved = localStorage.getItem(key);
+
+  const saved = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
   if (saved) {
     try {
       return JSON.parse(saved);
@@ -44,16 +62,42 @@ export function getSavedData<T>(key: string, defaultValue: T): T {
 }
 
 export function saveToStorage<T>(key: string, data: T): void {
-  localStorage.setItem(key, JSON.stringify(data));
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(key, JSON.stringify(data));
+  }
 }
 
-export function initializeDatabase(): void {
-  if (!localStorage.getItem(KEYS.USERS)) saveToStorage(KEYS.USERS, INITIAL_USERS);
-  if (!localStorage.getItem(KEYS.EVENTS)) saveToStorage(KEYS.EVENTS, INITIAL_EVENTS);
-  if (!localStorage.getItem(KEYS.ATTENDANCE)) saveToStorage(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
-  if (!localStorage.getItem(KEYS.TASKS)) saveToStorage(KEYS.TASKS, INITIAL_TASKS);
+export function initializeDatabase(force: boolean = false): void {
+  if (typeof window === 'undefined') return;
+
+  const checkAndInit = (key: string, initialData: any) => {
+    if (force) {
+      saveToStorage(key, initialData);
+      return;
+    }
+    const val = localStorage.getItem(key);
+    if (!val) {
+      saveToStorage(key, initialData);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(val);
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        saveToStorage(key, initialData);
+      }
+    } catch {
+      saveToStorage(key, initialData);
+    }
+  };
+
+  checkAndInit(KEYS.USERS, INITIAL_USERS);
+  checkAndInit(KEYS.EVENTS, INITIAL_EVENTS);
+  checkAndInit(KEYS.ATTENDANCE, INITIAL_ATTENDANCE);
+  checkAndInit(KEYS.TASKS, INITIAL_TASKS);
   
-  if (localStorage.getItem(KEYS.APPROVALS)) {
+  if (force) {
+    saveToStorage(KEYS.APPROVALS, INITIAL_TASK_APPROVALS);
+  } else if (localStorage.getItem(KEYS.APPROVALS)) {
     try {
       const stored = JSON.parse(localStorage.getItem(KEYS.APPROVALS) || '[]');
       if (Array.isArray(stored) && !stored.some((ap: any) => ap.TaskID === 202)) {
@@ -73,13 +117,16 @@ export function initializeDatabase(): void {
     saveToStorage(KEYS.APPROVALS, INITIAL_TASK_APPROVALS);
   }
 
-  if (!localStorage.getItem(KEYS.HISTORY)) saveToStorage(KEYS.HISTORY, INITIAL_SCORE_HISTORY);
-  if (!localStorage.getItem(KEYS.REWARDS)) saveToStorage(KEYS.REWARDS, INITIAL_REWARDS);
-  if (!localStorage.getItem(KEYS.WARNINGS)) saveToStorage(KEYS.WARNINGS, INITIAL_WARNINGS);
-  if (!localStorage.getItem(KEYS.NEWS)) saveToStorage(KEYS.NEWS, INITIAL_NEWS);
-  if (!localStorage.getItem(KEYS.ANNOUNCEMENTS)) saveToStorage(KEYS.ANNOUNCEMENTS, INITIAL_ANNOUNCEMENTS);
-  if (!localStorage.getItem(KEYS.NOTIFICATIONS)) saveToStorage(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
-  if (!localStorage.getItem(KEYS.CURRENT_USER_ID)) localStorage.setItem(KEYS.CURRENT_USER_ID, "4"); // Default Member: Phạm Quốc Bảo
+  checkAndInit(KEYS.HISTORY, INITIAL_SCORE_HISTORY);
+  checkAndInit(KEYS.REWARDS, INITIAL_REWARDS);
+  checkAndInit(KEYS.WARNINGS, INITIAL_WARNINGS);
+  checkAndInit(KEYS.NEWS, INITIAL_NEWS);
+  checkAndInit(KEYS.ANNOUNCEMENTS, INITIAL_ANNOUNCEMENTS);
+  checkAndInit(KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
+
+  if (force || !localStorage.getItem(KEYS.CURRENT_USER_ID)) {
+    localStorage.setItem(KEYS.CURRENT_USER_ID, "4"); // Default Member: Phạm Quốc Bảo
+  }
 }
 
 // Recalculates Levels based on TotalScore

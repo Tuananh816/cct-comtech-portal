@@ -777,8 +777,20 @@ export default function Login({ users, onLoginSuccess, registerRequests, onRegis
 
       </div>
 
-      <div className="mt-6 text-center text-slate-500 text-[10px] font-mono tracking-wider">
-        PLATFORM ĐIỂM SỐ TIÊU CHUẨN • BAN KỸ THUẬT CCT - COMTECH
+      <div className="mt-6 text-center text-slate-500 text-[10px] font-mono tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1.5">
+        <span>PLATFORM ĐIỂM SỐ TIÊU CHUẨN • BAN KỸ THUẬT CCT - COMTECH</span>
+        <span className="hidden sm:inline text-slate-700">•</span>
+        <button
+          onClick={() => {
+            if (window.confirm("Bạn có chắc chắn muốn thiết lập lại toàn bộ dữ liệu mẫu mặc định ban đầu? Đơn ứng tuyển và thay đổi của bạn sẽ được xóa sạch.")) {
+              localStorage.clear();
+              window.location.reload();
+            }
+          }}
+          className="text-indigo-400 hover:text-indigo-300 font-bold uppercase tracking-wider text-[9px] underline transition cursor-pointer"
+        >
+          Khôi phục dữ liệu gốc
+        </button>
       </div>
     </div>
   );
